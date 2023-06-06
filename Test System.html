@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>测试系统</title>
+  <meta charset="UTF-8">
+  <style>
+body {
+  text-align: center;  /* 文本水平居中 */
+  margin: 0;           /* 去掉页面默认的边距 */
+  padding: 0;          /* 去掉页面默认的内边距 */
+  overflow: hidden;    /* 防止页面因内容过多滚动条出现 */
+}
+
+#container {
+  display: flex;             /* 使用弹性盒子布局 */
+  flex-direction: column;   /* 设置为上下布局 */
+  justify-content: center;   /* 子元素水平居中 */
+  align-items: center;       /* 子元素垂直居中 */
+  height: 90vh;             /* 占90%视口 */
+}
+
+#left-panel {
+  width: 300px;              /* 左侧容器宽度为300px */
+  text-align: center;          /* 文本居中 */
+  padding: 10px;             /* 左侧容器内部元素与容器之间的间距 */
+  background-color: #f1f1f1; /* 左侧容器背景颜色为淡灰色 */
+  height: 5%;               /* 占据父容器的5%高度 */
+}
+
+#right-panel {
+  flex: 1;                   /* 右侧容器占据剩余高度 */
+  height: 100%;                /* 占据父容器的100%高度 */
+  overflow: hidden;          /* 防止内容过多出现滚动条 */
+}
+  </style>
+</head>
+<body>
+ <h1>测试系统</h1>
+  <div id="container">
+    <div id="left-panel">
+      <label for="shape-select">选择形状：</label>
+      <select id="shape-select">
+        <option value="cube">正方体</option>
+        <option value="cylinder">圆柱体</option>
+        <option value="sphere">圆</option>
+          <option value="obj">相机</option>
+      </select>
+      <button id="render-button">渲染</button>
+    </div>
+    <div id="right-panel"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/110/three.min.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/r110/examples/js/loaders/OBJLoader.js"></script>
+    <script src="https://cdn.rawgit.com/mrdoob/three.js/r110/examples/js/controls/OrbitControls.js"></script>
+  <script>
+     var camera, scene, renderer, controls;
+var geometry, material, mesh;
+
+init();
+animate();
+
+function init() {
+  // 创建相机
+  camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.01, 10);
+  camera.position.z = 5;
+
+  // 创建场景
+  scene = new THREE.Scene();
+
+  // 创建渲染器
+  renderer = new THREE.WebGLRenderer({ antialias: true });
+  renderer.setSize(window.innerWidth, window.innerHeight);
+  document.getElementById('right-panel').appendChild(renderer.domElement);
+
+  // 创建控制器
+  controls = new THREE.OrbitControls(camera, renderer.domElement);
+
+  window.addEventListener('resize', onWindowResize, false);
+}
+
+function onWindowResize() {
+  camera.aspect = window.innerWidth / window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+}
+
+function renderShape() {
+  var shapeSelect = document.getElementById('shape-select');
+  var shape = shapeSelect.value;
+
+  // 移除之前的模型
+  if (mesh) {
+    scene.remove(mesh);
+  }
+
+  // 创建几何体和材质
+  if (shape === 'cube') {
+    geometry = new THREE.BoxGeometry();
+    material = new THREE.MeshNormalMaterial();
+  } else if (shape === 'cylinder') {
+    geometry = new THREE.CylinderGeometry(0.5, 0.5, 1, 32);
+    material = new THREE.MeshNormalMaterial();
+  } else if (shape === 'sphere') {
+    geometry = new THREE.SphereGeometry(0.5, 32, 32);
+    material = new THREE.MeshNormalMaterial();
+  } else if (shape === 'obj') {
+    var loader = new THREE.OBJLoader();
+    loader.load('https://raw.githubusercontent.com/luojin666/Model-preview-and-quotation-system/master/models/xx.obj', function ( object ) {
+      object.traverse( function ( child ) {
+        if ( child instanceof THREE.Mesh ){
+          child.material = new THREE.MeshNormalMaterial();
+        }
+      });
+      object.scale.set(0.5, 0.5, 0.5);
+      scene.add( object );
+      // 将新生成的模型对象赋值给 mesh 全局变量
+      mesh = object;
+    });
+    return; // obj模型需要异步加载，避免未加载完成就执行下面的代码，此处直接 return
+  }
+
+  // 创建网格，并添加到场景中
+  mesh = new THREE.Mesh(geometry, material);
+  scene.add(mesh);
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  renderer.render(scene, camera);
+  controls.update();
+}
+
+var renderButton = document.getElementById('render-button');
+renderButton.addEventListener('click', renderShape);
+  </script>
+</body>
+</html>
